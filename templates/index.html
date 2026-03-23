@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Todo List - Organize Your Work{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My Tasks</h1>
+    <p class="text-muted">Organize and track your daily tasks efficiently</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div class="stat-info">
+            <h3>{{ stats.total }}</h3>
+            <p>Total Tasks</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-info">
+            <h3>{{ stats.pending }}</h3>
+            <p>Pending</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+            <h3>{{ stats.completed }}</h3>
+            <p>Completed</p>
+        </div>
+    </div>
+    <div class="stat-card stat-high">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-info">
+            <h3>{{ stats.high }}</h3>
+            <p>High Priority</p>
+        </div>
+    </div>
+</div>
+
+<div class="controls-section">
+    <div class="filters">
+        <form method="GET" action="{{ url_for('main.index') }}" class="filter-form">
+            <select name="priority" onchange="this.form.submit()">
+                <option value="all" {% if priority_filter == 'all' %}selected{% endif %}>All Priorities</option>
+                <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
+                <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+                <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
+            </select>
+            <select name="status" onchange="this.form.submit()">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+            </select>
+            <select name="sort" onchange="this.form.submit()">
+                <option value="created" {% if sort_by == 'created' %}selected{% endif %}>Sort by Date</option>
+                <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>Sort by Priority</option>
+            </select>
+        </form>
+    </div>
+    <button class="btn-primary" onclick="openAddModal()">+ Add Task</button>
+</div>
+
+<div class="tasks-container">
+    {% if tasks %}
+        <div class="tasks-list">
+            {% for task in tasks %}
+            <div class="task-card {% if task.completed %}completed{% endif %} priority-{{ task.priority }}">
+                <div class="task-checkbox">
+                    <form action="{{ url_for('main.toggle_task', task_id=task.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="checkbox-btn {% if task.completed %}checked{% endif %}">
+                            {% if task.completed %}✓{% endif %}
+                        </button>
+                    </form>
+                </div>
+                <div class="task-content">
+                    <div class="task-header">
+                        <h3 class="task-title">{{ task.title }}</h3>
+                        <span class="priority-badge priority-{{ task.priority }}">{{ task.priority|capitalize }}</span>
+                    </div>
+                    {% if task.description %}
+                    <p class="task-description">{{ task.description }}</p>
+                    {% endif %}
+                    <div class="task-meta">
+                        <span class="created-date">Created: {{ task.created_at.strftime('%d %b %Y') }}</span>
+                    </div>
+                </div>
+                <div class="task-actions">
+                    <button class="btn-icon" onclick="openEditModal({{ task.id }})" title="Edit">✏️</button>
+                    <form action="{{ url_for('main.delete_task', task_id=task.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this task?')">
+                        <button type="submit" class="btn-icon btn-danger" title="Delete">🗑️</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <h2>No tasks yet</h2>
+            <p>Start by adding your first task!</p>
+            <button class="btn-primary" onclick="openAddModal()">+ Add Task</button>
+        </div>
+    {% endif %}
+</div>
+
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Add New Task</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="taskForm" method="POST">
+            <div class="form-group">
+                <label for="title">Title *</label>
+                <input type="text" id="title" name="title" required placeholder="Enter task title">
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="3" placeholder="Enter task description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="priority">Priority</label>
+                <select id="priority" name="priority">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Save Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
